@@ -89,6 +89,7 @@ These are active areas of development.
 - Improved UI animations and accessibility
 
 ---
+<img width="1806" height="824" alt="image" src="https://github.com/user-attachments/assets/3f1750fc-6d00-4433-9635-8b01e558fae4" />
 
 ## 👩‍💻 Author
 
