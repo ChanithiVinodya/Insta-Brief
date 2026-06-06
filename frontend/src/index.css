@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: 250 248 245;
+  --color-surface: 255 255 255;
+  --color-text: 28 25 23;
+  --color-muted: 120 113 108;
+  --color-primary: 13 148 136;
+  --color-primary-light: 20 184 166;
+  --color-secondary: 224 122 95;
+  --shadow-card: 0 4px 24px rgba(13, 148, 136, 0.08);
+  --header-gradient: linear-gradient(135deg, #faf8f5 0%, #e6f7f5 50%, #d4ede9 100%);
+}
+
+.dark {
+  --color-bg: 12 15 20;
+  --color-surface: 21 27 36;
+  --color-text: 231 229 228;
+  --color-muted: 168 162 158;
+  --color-primary: 45 212 191;
+  --color-primary-light: 94 234 212;
+  --color-secondary: 244 162 97;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --header-gradient: linear-gradient(135deg, #0c0f14 0%, #152028 50%, #1a2e35 100%);
+}
+
+body {
+  @apply bg-paper text-ink font-body antialiased min-h-screen;
+}
+
+.header-bar {
+  background: var(--header-gradient);
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand text-white font-medium px-5 py-2.5 rounded-xl
+      hover:opacity-90 transition-opacity disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply border border-brand text-brand font-medium px-5 py-2.5 rounded-xl
+      hover:bg-brand/10 transition-colors;
+  }
+  .card {
+    @apply bg-surface rounded-2xl shadow-card border border-brand/10 p-5;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl bg-surface border border-muted/30
+      text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40;
+  }
+}
