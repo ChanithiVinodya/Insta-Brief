@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
-import Header from './components/Header.jsx';
+import { NewsTicker, Navbar, DatelineBar } from './components/GlobalChrome.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -15,7 +15,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Header />
+          <NewsTicker />
+          <Navbar />
+          <DatelineBar />
           <main>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
