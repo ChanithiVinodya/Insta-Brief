@@ -1,7 +1,23 @@
+import React from 'react';
+
 export default function Spinner() {
   return (
-    <div className="flex justify-center py-12">
-      <div className="w-10 h-10 border-3 border-brand/30 border-t-brand rounded-full animate-spin" />
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+      <div className="heading" style={{ 
+        fontSize: '14px', 
+        fontStyle: 'italic',
+        letterSpacing: '2px',
+        animation: 'pulse 1.5s infinite'
+      }}>
+        ◆ TRANSMITTING ◆
+      </div>
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 0.4; }
+          50% { opacity: 1; }
+          100% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   );
 }
