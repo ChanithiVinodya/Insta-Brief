@@ -52,7 +52,7 @@ public class RssFeedClient {
     private List<ArticleDraft> fetchFeed(String feedUrl) throws Exception {
         List<ArticleDraft> drafts = new ArrayList<>();
         SyndFeedInput input = new SyndFeedInput();
-        SyndFeed feed = input.build(new XmlReader(new URL(feedUrl)));
+        SyndFeed feed = input.build(new XmlReader(new URL(feedUrl).openStream()));
         String source = "rss:" + feed.getTitle();
 
         for (SyndEntry entry : feed.getEntries()) {

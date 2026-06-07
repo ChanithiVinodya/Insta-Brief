@@ -11,6 +11,8 @@ import org.springframework.web.client.RestClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 
 @Component
 public class NewsApiClient {
@@ -42,7 +44,7 @@ public class NewsApiClient {
                     properties.getNewsApiPageSize());
 
             JsonNode response = restClient.get()
-                    .uri(url)
+                    .uri(Objects.requireNonNull(url))
                     .header("X-Api-Key", properties.getNewsApiKey())
                     .retrieve()
                     .body(JsonNode.class);
