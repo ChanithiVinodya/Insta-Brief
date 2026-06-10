@@ -75,20 +75,20 @@ export const Navbar = () => {
         <Link to="/" style={{
           textDecoration: 'none',
           color: isActive('/') ? 'var(--gold)' : 'var(--paper)',
-          fontSize: '10px',
+          fontSize: '18px',
           textTransform: 'uppercase',
-          letterSpacing: '1.5px',
+          letterSpacing: '2.0px',
           fontFamily: 'var(--font-ui)',
-          fontWeight: '700'
+          fontWeight: '900'
         }}>Feed</Link>
         <Link to="/trending" style={{
           textDecoration: 'none',
           color: isActive('/trending') ? 'var(--gold)' : 'var(--paper)',
-          fontSize: '10px',
+          fontSize: '18px',
           textTransform: 'uppercase',
-          letterSpacing: '1.5px',
+          letterSpacing: '2.0px',
           fontFamily: 'var(--font-ui)',
-          fontWeight: '700'
+          fontWeight: '900'
         }}>Trending</Link>
       </div>
 
