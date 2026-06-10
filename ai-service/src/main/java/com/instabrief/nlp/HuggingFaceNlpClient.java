@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.*;
+import java.util.Objects;
+
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -45,8 +47,8 @@ public class HuggingFaceNlpClient implements NlpClient {
             JsonNode response = restClient.post()
                     .uri(properties.getHfApiUrl() + "/" + properties.getHfSummaryModel())
                     .header("Authorization", "Bearer " + properties.getHfApiToken())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(body)
+                    .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                    .body(Objects.requireNonNull(body))
                     .retrieve()
                     .body(JsonNode.class);
 
@@ -88,7 +90,7 @@ public class HuggingFaceNlpClient implements NlpClient {
         while (matcher.find()) {
             String word = matcher.group();
             if (!stop.contains(word)) {
-                freq.merge(word, 1L, Long::sum);
+                freq.merge(word, 1L, (a, b) -> a + b);
             }
         }
 
