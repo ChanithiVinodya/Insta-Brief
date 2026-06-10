@@ -1,12 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   --ink: #1a1008;
   --paper: #f5eed8;
   --paper2: #ede3c4;
   --paper3: #e2d4aa;
+  --paper-bg: #d4c48a;
+  --paper-base: #b8a878;
   --accent: #8b1a1a;
   --gold: #c8960c;
   --muted: #5c4a2a;
@@ -110,12 +112,21 @@ body::after {
 .ticker {
   display: inline-block;
   white-space: nowrap;
-  animation: ticker 30s linear infinite;
+  animation: ticker 80s linear infinite;
   color: var(--gold);
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
+}
+
+@keyframes scrollUp {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.scroll-track {
+  animation: scrollUp linear infinite;
 }
 
 .ticker-item {
@@ -138,6 +149,7 @@ body::after {
 
 .ui-label {
   font-family: var(--font-ui);
+  font-size: 12px;
 }
 
 /* Common Components */
@@ -173,7 +185,7 @@ body::after {
   background: var(--rule);
   color: var(--paper);
   font-family: var(--font-ui);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 3px;
   text-transform: uppercase;
   padding: 4px 8px;
@@ -186,7 +198,7 @@ body::after {
   border: 1px solid var(--gold);
   color: var(--gold);
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   padding: 6px 12px;
   transition: 0.2s;
@@ -196,4 +208,120 @@ body::after {
 .btn-ghost:hover {
   background: var(--gold);
   color: var(--ink);
+}
+
+/* Modern Vintage Utilities */
+.paper-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.paper-shimmer::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  transform: rotate(30deg);
+  pointer-events: none;
+  animation: shimmer 10s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translate(-30%, -30%) rotate(30deg); }
+  50% { transform: translate(10%, 10%) rotate(30deg); }
+  100% { transform: translate(-30%, -30%) rotate(30deg); }
+}
+
+.input-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.input-label-float {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+.input-field-vintage {
+  width: 100%;
+  padding: 12px 10px 8px;
+  border: 1px solid var(--paper3);
+  border-bottom: 2px solid var(--rule);
+  background: var(--paper2);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.25s, background 0.25s;
+}
+
+.input-field-vintage:focus {
+  background: var(--paper);
+  border-bottom-color: var(--accent);
+}
+
+.input-field-vintage:focus + .input-label-float,
+.input-field-vintage:not(:placeholder-shown) + .input-label-float {
+  top: -8px;
+  left: 0;
+  font-size: 9px;
+  opacity: 1;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.btn-vintage {
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-vintage:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 26, 26, 0.3);
+}
+
+.btn-vintage:active {
+  transform: translateY(0);
+}
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
