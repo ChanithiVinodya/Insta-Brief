@@ -76,12 +76,23 @@ export default function FeedPage() {
         position: 'relative'
       }}>
         <div style={{ fontSize: '12px', letterSpacing: '6px', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '12px', fontWeight: '700' }}>
-          ◈ LATEST INTELLIGENCE DISPATCH ◈
+          {initialTopic ? `◈ TOPICAL INTELLIGENCE DOSSIER ◈` : `◈ LATEST INTELLIGENCE DISPATCH ◈`}
         </div>
-        <h1 className="heading" style={{ fontSize: '64px', fontWeight: '900', color: 'var(--ink)', lineHeight: 1 }}>Your Morning Brief</h1>
+        <h1 className="heading" style={{ fontSize: '64px', fontWeight: '900', color: 'var(--ink)', lineHeight: 1 }}>
+          {initialTopic ? initialTopic : 'Your Morning Brief'}
+        </h1>
         <p className="body-text" style={{ fontStyle: 'italic', fontSize: '20px', color: 'var(--muted)', marginTop: '0.5rem' }}>
-          A daily curiosity-driven chronicle of the world's movements.
+          {initialTopic 
+            ? `Comprehensive synthesis of wire reports regarding "${initialTopic}"`
+            : "A daily curiosity-driven chronicle of the world's movements."}
         </p>
+        {initialTopic && (
+          <div style={{ marginTop: '2rem' }}>
+             <Link to="/trending" className="btn-vintage" style={{ fontSize: '10px', textDecoration: 'none' }}>
+               ← Return to Global Trends
+             </Link>
+          </div>
+        )}
       </header>
 
       {/* Category Filter Bar (Moved from Trending) */}
@@ -120,9 +131,9 @@ export default function FeedPage() {
               setSearchParams({});
             }}
             className="btn-vintage"
-            style={{ background: 'var(--accent)', color: 'var(--paper)', borderColor: 'var(--accent)', padding: '6px 18px', fontSize: '10px' }}
+            style={{ background: 'var(--accent)', color: 'var(--paper)', borderColor: 'var(--accent)', padding: '6px 18px', fontSize: '10px', fontWeight: '900' }}
           >
-            Clear Topic: {initialTopic} ✕
+            Clear Filter: {initialTopic} ✕
           </button>
         )}
       </div>
