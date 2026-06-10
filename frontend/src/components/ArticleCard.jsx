@@ -2,34 +2,54 @@ import { Link } from 'react-router-dom';
 
 export default function ArticleCard({ article }) {
   return (
-    <Link to={`/articles/${article.id}`} className="card block hover:border-brand/40 transition-all group">
-      <div className="flex gap-4">
-        {article.imageUrl && (
-          <img
-            src={article.imageUrl}
-            alt=""
-            className="w-24 h-24 object-cover rounded-xl flex-shrink-0 hidden sm:block"
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-brand uppercase tracking-wide mb-1">{article.source}</p>
-          <h2 className="font-display font-semibold text-lg text-ink group-hover:text-brand transition-colors line-clamp-2">
-            {article.title}
-          </h2>
-          {article.summary && (
-            <p className="text-muted text-sm mt-2 line-clamp-3">{article.summary}</p>
+    <div className="card-enter">
+      <Link to={`/articles/${article.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div className="card" style={{
+          padding: '1.5rem',
+          borderLeft: '4px solid var(--accent)',
+          display: 'flex',
+          gap: '1.5rem',
+          alignItems: 'center'
+        }}>
+          {article.imageUrl && (
+            <img
+              src={article.imageUrl}
+              alt=""
+              style={{
+                width: '120px',
+                height: '120px',
+                objectCover: 'cover',
+                border: '1px solid var(--rule)',
+                filter: 'grayscale(0.3)'
+              }}
+              className="hidden sm:block"
+            />
           )}
-          {article.keywords?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {article.keywords.slice(0, 4).map((kw) => (
-                <span key={kw} className="text-xs px-2 py-0.5 rounded-full bg-brand/10 text-brand">
-                  {kw}
-                </span>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span className="ui-label" style={{ color: 'var(--accent)', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
+                {article.source} Disptach
+              </span>
+            </div>
+            <h3 className="heading" style={{ fontSize: '26px', fontWeight: '900', lineHeight: 1.2, marginBottom: '0.75rem' }}>
+              {article.title}
+            </h3>
+            <p className="body-text" style={{ fontSize: '16px', fontStyle: 'italic', marginBottom: '1rem', color: 'var(--muted)', lineHeight: 1.4 }}>
+              {article.summary?.length > 250 ? article.summary.substring(0, 250) + '...' : article.summary}
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {article.tags?.slice(0, 3).map(tag => (
+                <span key={tag} className="ui-label" style={{
+                  background: 'var(--tag-bg)',
+                  color: 'var(--tag-fg)',
+                  fontSize: '10px',
+                  padding: '2px 8px'
+                }}>{tag}</span>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
