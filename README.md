@@ -2,7 +2,15 @@
 
 > AI-powered news aggregation and personalized summarization platform.
 
-InstaBrief fetches articles from multiple news sources, summarizes them using NLP/AI models, extracts trending topics, and delivers a personalized feed tailored to each user's interests and reading behavior.
+🧠 What is InstaBrief?
+InstaBrief is a full-stack, production-grade web application that aggregates news from across the internet and uses AI to deliver what actually matters — summarized, personalized, and ranked for each user.
+The platform:
+
+Ingests articles from NewsAPI, RSS feeds, and configurable sources in real time
+Summarizes each article into 2–5 clean sentences using NLP (Hugging Face / OpenAI)
+Extracts keywords and computes trending topics from engagement and recency signals
+Personalizes each user's feed using a weighted ranking algorithm based on interests, behavior, and trends
+Scales via a microservices architecture — a dedicated AI service handles all NLP; an API gateway handles all user-facing logic
 
 ---
 
