@@ -34,72 +34,108 @@ export default function ArticlePage() {
   );
 
   return (
-    <div className="screen active" style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem 1rem' }}>
-      <Link to="/" className="ui-label" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '10px', marginBottom: '2rem', display: 'inline-block' }}>
-        ← RETURN TO GAZETTE
-      </Link>
-      
-      <header style={{ marginBottom: '2.5rem', borderBottom: '1px solid var(--paper3)', paddingBottom: '1.5rem' }}>
-        <div className="ui-label" style={{ color: 'var(--muted)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>
-          {article.source} Dispatch
-        </div>
-        <h1 className="heading" style={{ fontSize: '38px', fontWeight: '900', lineHeight: 1.1, marginBottom: '1rem' }}>
-          {article.title}
-        </h1>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {article.keywords?.map(kw => (
-            <span key={kw} className="ui-label" style={{ border: '1px solid var(--paper3)', padding: '2px 8px', fontSize: '9px', textTransform: 'uppercase' }}>
-              {kw}
-            </span>
-          ))}
+    <div className="screen active fade-in-up" style={{ maxWidth: '1000px', margin: '0 auto', padding: '4rem 2rem' }}>
+      <header className="fade-in-up" style={{ animationDelay: '0.1s', marginBottom: '4rem' }}>
+        <Link to="/" className="btn-ghost" style={{ textDecoration: 'none', fontSize: '10px', marginBottom: '2.5rem', display: 'inline-block', letterSpacing: '2px' }}>
+          ← BACK TO THE DAILY WIRE
+        </Link>
+        
+        <div style={{ borderTop: '2px solid var(--rule)', borderBottom: '2px solid var(--rule)', padding: '1.5rem 0', textAlign: 'center' }}>
+          <div className="ui-label" style={{ color: 'var(--accent)', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '12px', fontWeight: '900' }}>
+            {article.source} · Wire Dispatch · Vol. XLII
+          </div>
+          <h1 className="heading" style={{ fontSize: '56px', fontWeight: '900', lineHeight: 1, marginBottom: '1.5rem', color: 'var(--ink)' }}>
+            {article.title}
+          </h1>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {article.keywords?.map(kw => (
+              <span key={kw} className="ui-label" style={{ background: 'var(--paper2)', border: '1px solid var(--paper3)', padding: '4px 12px', fontSize: '10px', textTransform: 'uppercase', fontWeight: '700' }}>
+                {kw}
+              </span>
+            ))}
+          </div>
         </div>
       </header>
 
-      {article.imageUrl && (
-        <div style={{ marginBottom: '2.5rem', position: 'relative' }}>
-          <img src={article.imageUrl} alt="" style={{ width: '100%', filter: 'grayscale(0.3) contrast(1.1)', border: '1px solid var(--rule)' }} />
-          <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'var(--ink)', color: 'var(--paper)', fontSize: '8px', padding: '2px 6px' }}>
-            WIRE PHOTO
+      <div className="fade-in-up" style={{ animationDelay: '0.2s', marginBottom: '4rem' }}>
+        {article.imageUrl && (
+          <figure style={{ margin: 0, position: 'relative' }}>
+            <img src={article.imageUrl} alt="" style={{ width: '100%', height: '500px', objectFit: 'cover', filter: 'grayscale(0.2) contrast(1.1)', border: '1px solid var(--rule)', boxShadow: '15px 15px 0 var(--paper3)' }} />
+            <figcaption style={{ 
+              position: 'absolute', 
+              bottom: '-25px', 
+              right: '20px', 
+              fontFamily: 'var(--font-body)', 
+              fontStyle: 'italic', 
+              fontSize: '12px', 
+              color: 'var(--muted)',
+              background: 'var(--paper)',
+              padding: '4px 12px',
+              border: '1px solid var(--paper3)'
+            }}>
+              Direct Wire Transmission Photo: {article.source} Archive
+            </figcaption>
+          </figure>
+        )}
+      </div>
+
+      <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
+        {article.summary && (
+          <div className="card paper-shimmer" style={{ 
+            padding: '3rem', 
+            marginBottom: '4rem', 
+            borderLeft: '10px solid var(--gold)',
+            background: 'var(--paper2)',
+            boxShadow: '10px 10px 0 rgba(200, 150, 12, 0.1)'
+          }}>
+            <h2 className="heading" style={{ fontSize: '24px', fontStyle: 'italic', marginBottom: '1.5rem', borderBottom: '1px solid var(--gold)', paddingBottom: '0.5rem', display: 'inline-block' }}>Executive Intelligence Summary</h2>
+            <p className="body-text" style={{ fontSize: '19px', lineHeight: 1.6, color: 'var(--ink)' }}>{article.summary}</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {article.summary && (
-        <div className="card" style={{ 
-          padding: '2rem', 
-          marginBottom: '3rem', 
-          borderLeft: '4px solid var(--gold)',
-          background: 'var(--paper2)'
-        }}>
-          <h2 className="heading" style={{ fontSize: '20px', fontStyle: 'italic', marginBottom: '1rem' }}>Executive Summary</h2>
-          <p className="body-text" style={{ fontSize: '16px', lineHeight: 1.6 }}>{article.summary}</p>
-        </div>
-      )}
+      <div className="fade-in-up" style={{ animationDelay: '0.4s' }}>
+        {article.content && (
+          <div className="body-text" style={{ 
+            fontSize: '20px', 
+            lineHeight: 1.8, 
+            columnCount: window.innerWidth > 768 ? 2 : 1, 
+            columnGap: '4rem',
+            columnRule: '1px solid var(--paper3)',
+            whiteSpace: 'pre-wrap',
+            color: 'var(--ink)',
+            textAlign: 'justify'
+          }}>
+            <span style={{
+              float: 'left',
+              fontSize: '84px',
+              lineHeight: '64px',
+              paddingTop: '4px',
+              paddingRight: '12px',
+              fontFamily: 'var(--font-masthead)',
+              color: 'var(--accent)'
+            }}>{article.content[0]}</span>
+            {article.content.slice(1)}
+          </div>
+        )}
+      </div>
 
-      {article.content && (
-        <div className="body-text" style={{ 
-          fontSize: '18px', 
-          lineHeight: 1.7, 
-          columnCount: 1, 
-          columnGap: '2rem',
-          whiteSpace: 'pre-wrap',
-          color: 'var(--ink)'
-        }}>
-          {article.content}
+      <footer className="fade-in-up" style={{ animationDelay: '0.5s', marginTop: '6rem', borderTop: '4px double var(--rule)', paddingTop: '3rem', textAlign: 'center' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--muted)' }}>
+            END OF DISPATCH · VERIFIED SECURE
+          </p>
         </div>
-      )}
-
-      <div style={{ marginTop: '4rem', borderTop: '2px solid var(--rule)', paddingTop: '2rem', textAlign: 'center' }}>
         <a
           href={article.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-ghost"
-          style={{ fontSize: '12px', padding: '10px 24px' }}
+          className="btn-vintage"
+          style={{ display: 'inline-flex', padding: '14px 40px' }}
         >
-          Read Full Original Wire Dispatch
+          View Original Source Wire
         </a>
-      </div>
+      </footer>
     </div>
   );
 }
