@@ -27,9 +27,9 @@ public class TrendingService {
     private final EntityManager entityManager;
 
     public TrendingService(TrendingTopicRepository trendingTopicRepository,
-                           ArticleKeywordRepository keywordRepository,
-                           ArticleRepository articleRepository,
-                           EntityManager entityManager) {
+            ArticleKeywordRepository keywordRepository,
+            ArticleRepository articleRepository,
+            EntityManager entityManager) {
         this.trendingTopicRepository = trendingTopicRepository;
         this.keywordRepository = keywordRepository;
         this.articleRepository = articleRepository;
@@ -43,7 +43,6 @@ public class TrendingService {
 
         trendingTopicRepository.deleteOlderThan(windowStart.minus(30, ChronoUnit.DAYS));
 
-        @SuppressWarnings("unchecked")
         List<Object[]> rows = keywordRepository.findKeywordFrequencyRecent();
 
         for (Object[] row : rows) {
@@ -61,6 +60,28 @@ public class TrendingService {
             entity.setArticleCount((int) count);
             entity.setWindowStart(windowStart);
             entity.setWindowEnd(windowEnd);
+
+            // Fetch representative data
+            try {
+                Query articleQuery = entityManager.createQuery("""
+                        SELECT a FROM ArticleEntity a
+                        JOIN ArticleKeywordEntity k ON k.articleId = a.id
+                        WHERE LOWER(k.keyword) = LOWER(:topic)
+                        ORDER BY a.publishedAt DESC
+                        """);
+                articleQuery.setParameter("topic", topic);
+                articleQuery.setMaxResults(1);
+                ArticleEntity rep = (ArticleEntity) articleQuery.getSingleResult();
+                if (rep != null) {
+                    entity.setSummary(rep.getSummary());
+                    entity.setImageUrl(rep.getImageUrl());
+                    // Heuristic for category if not present
+                    entity.setCategory(rep.getSource());
+                }
+            } catch (Exception e) {
+                // No representative article found or other issue
+            }
+
             trendingTopicRepository.save(entity);
 
             updateArticleTrendingScores(topic, score);
@@ -70,11 +91,11 @@ public class TrendingService {
 
     private double fetchEngagementBoost(String keyword) {
         Query q = entityManager.createNativeQuery("""
-            SELECT COUNT(*) FROM user_interactions ui
-            JOIN article_keywords ak ON ak.article_id = ui.article_id
-            WHERE LOWER(ak.keyword) = LOWER(:keyword)
-            AND ui.created_at >= NOW() - INTERVAL '7 days'
-            """);
+                SELECT COUNT(*) FROM user_interactions ui
+                JOIN article_keywords ak ON ak.article_id = ui.article_id
+                WHERE LOWER(ak.keyword) = LOWER(:keyword)
+                AND ui.created_at >= NOW() - INTERVAL '7 days'
+                """);
         q.setParameter("keyword", keyword);
         Number result = (Number) q.getSingleResult();
         return result != null ? result.doubleValue() * 0.5 : 0;
@@ -82,10 +103,10 @@ public class TrendingService {
 
     private void updateArticleTrendingScores(String keyword, double score) {
         Query q = entityManager.createQuery("""
-            SELECT a FROM ArticleEntity a
-            JOIN ArticleKeywordEntity k ON k.articleId = a.id
-            WHERE LOWER(k.keyword) = LOWER(:keyword)
-            """);
+                SELECT a FROM ArticleEntity a
+                JOIN ArticleKeywordEntity k ON k.articleId = a.id
+                WHERE LOWER(k.keyword) = LOWER(:keyword)
+                """);
         q.setParameter("keyword", keyword);
         @SuppressWarnings("unchecked")
         List<ArticleEntity> articles = q.getResultList();
