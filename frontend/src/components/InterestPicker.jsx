@@ -23,10 +23,10 @@ export default function InterestPicker({ selected, onChange }) {
             key={interest}
             type="button"
             onClick={() => toggle(interest)}
-            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all ${
+            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all border ${
               active
-                ? 'bg-brand text-white shadow-md'
-                : 'bg-surface border border-muted/30 text-muted hover:border-brand/50'
+                ? 'bg-[var(--gold)] text-[var(--ink)] border-[var(--gold)] shadow-md'
+                : 'bg-[var(--paper2)] border-[var(--paper3)] text-[var(--muted)] hover:border-[var(--gold)]'
             }`}
           >
             {interest}
