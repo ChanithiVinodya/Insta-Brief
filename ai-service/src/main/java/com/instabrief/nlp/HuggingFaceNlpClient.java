@@ -10,7 +10,6 @@ import org.springframework.web.client.RestClient;
 
 import java.util.*;
 import java.util.Objects;
-
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,42 @@ import java.util.stream.Collectors;
 public class HuggingFaceNlpClient implements NlpClient {
 
     private static final Logger log = LoggerFactory.getLogger(HuggingFaceNlpClient.class);
-    private static final Pattern WORD = Pattern.compile("[a-zA-Z]{4,}");
+    private static final Pattern WORD = Pattern.compile("[a-zA-Z]{3,}");
+
+    public static final Set<String> STOP_WORDS = Set.of(
+            "the", "is", "a", "an", "and", "or", "but", "more", "here", "this", "that", "with",
+            "from", "about", "have", "has", "had", "was", "were", "will", "would", "can",
+            "been", "their", "which", "when", "there", "could", "should", "after", "before",
+            "other", "into", "over", "under", "between", "through", "during", "without",
+            "within", "against", "among", "while", "where", "these", "those", "because",
+            "since", "until", "although", "however", "article", "said", "says", "been",
+            "some", "from", "into", "onto", "your", "them", "ahead", "nearly", "around",
+            "about", "above", "across", "along", "behind", "below", "beneath", "beside",
+            "beyond", "concerning", "considering", "despite", "down", "except", "following",
+            "inside", "minus", "near", "next", "opposite", "outside", "past", "regarding",
+            "round", "save", "than", "toward", "underneath", "unlike", "upon", "versus",
+            "via", "always", "never", "often", "sometimes", "almost", "quite", "just",
+            "very", "still", "yet", "already", "soon", "late", "later", "earlier", "much",
+            "many", "few", "any", "all", "each", "every", "both", "either", "neither",
+            "only", "also", "even", "instead", "then", "thereby", "therefore", "away",
+            "back", "far", "long", "now", "side", "well", "wherever", "whenever",
+            // Additional adverbs/determiners that NLP models wrongly tag as nouns
+            "another", "others", "whole", "full", "rather", "likely", "simply", "mainly",
+            "mostly", "largely", "heavily", "widely", "closely", "clearly", "quickly",
+            "early", "following", "together", "further", "certain", "enough", "less",
+            "least", "most", "such", "own", "same", "different", "both", "various",
+            "several", "another", "much", "little", "something", "anything", "everything",
+            "nothing", "someone", "anyone", "everyone", "nobody", "somewhere", "anywhere",
+            "everywhere", "nowhere", "somehow", "anyway", "anyhow", "meanwhile");
+
+    public static final Set<String> BLACKLIST = Set.of(
+            "breaking", "update", "news", "watch", "report", "live", "today", "video",
+            "press", "media", "latest", "exclusive", "summary", "read", "click", "source",
+            "image", "photo", "copyright", "rights", "reserved", "newsletter", "email",
+            "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+            "january", "february", "march", "april", "may", "june", "july", "august",
+            "september", "october", "november", "december", "time", "year", "month", "week",
+            "day", "hour", "minute", "second", "moment", "period", "story");
 
     private final RestClient restClient;
     private final InstaBriefProperties properties;
@@ -40,9 +74,7 @@ public class HuggingFaceNlpClient implements NlpClient {
                     "parameters", Map.of(
                             "min_length", 60,
                             "max_length", 180,
-                            "do_sample", false
-                    )
-            );
+                            "do_sample", false));
 
             JsonNode response = restClient.post()
                     .uri(properties.getHfApiUrl() + "/" + properties.getHfSummaryModel())
@@ -82,22 +114,60 @@ public class HuggingFaceNlpClient implements NlpClient {
         if (content == null || content.isBlank()) {
             return List.of();
         }
-        // Keyword extraction via frequency analysis (HF NER models vary; keep predictable)
+
+        try {
+            Map<String, Object> body = Map.of(
+                    "text", content,
+                    "maxKeywords", maxKeywords);
+
+            JsonNode response = restClient.post()
+                    .uri(properties.getNlpServiceUrl() + "/keywords")
+                    .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                    .body(Objects.requireNonNull(body))
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response != null && response.has("keywords")) {
+                List<String> keywords = new ArrayList<>();
+                response.get("keywords").forEach(k -> keywords.add(k.asText()));
+                if (!keywords.isEmpty()) {
+                    return keywords;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("NLP Service failed, using local extraction fallback: {}", e.getMessage());
+        }
+
+        // Local extraction fallback (improved with stop words and blacklist)
         Map<String, Long> freq = new HashMap<>();
-        var matcher = WORD.matcher(content.toLowerCase());
-        Set<String> stop = Set.of("that", "this", "with", "from", "have", "been", "will", "their", "about", "which", "when", "there", "would", "could", "should", "after", "before", "other", "into", "over", "under", "between", "through", "during", "without", "within", "against", "among", "while", "where", "these", "those", "because", "since", "until", "although", "however", "article", "news", "said", "says");
+        var matcher = WORD.matcher(content);
 
         while (matcher.find()) {
-            String word = matcher.group();
-            if (!stop.contains(word)) {
-                freq.merge(word, 1L, (a, b) -> a + b);
+            String originalWord = matcher.group();
+            String word = originalWord.toLowerCase();
+
+            if (STOP_WORDS.contains(word) || BLACKLIST.contains(word)) {
+                continue;
+            }
+
+            boolean isCapitalized = Character.isUpperCase(originalWord.charAt(0));
+            long weight = isCapitalized ? 5 : 1;
+
+            if (!isCapitalized) {
+                if (word.endsWith("ing") || word.endsWith("edly") || word.endsWith("able") || word.endsWith("ious")) {
+                    weight = 0;
+                }
+            }
+
+            if (weight > 0) {
+                freq.merge(word, weight, (a, b) -> a + b);
             }
         }
 
         return freq.entrySet().stream()
                 .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
                 .limit(maxKeywords)
-                .map(e -> e.getKey())
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
@@ -106,9 +176,11 @@ public class HuggingFaceNlpClient implements NlpClient {
         StringBuilder sb = new StringBuilder();
         int count = 0;
         for (String s : sentences) {
-            if (s.isBlank()) continue;
+            if (s.isBlank())
+                continue;
             sb.append(s.trim()).append(" ");
-            if (++count >= 3) break;
+            if (++count >= 3)
+                break;
         }
         String result = sb.toString().trim();
         return result.isEmpty() ? text.substring(0, Math.min(200, text.length())) : result;
