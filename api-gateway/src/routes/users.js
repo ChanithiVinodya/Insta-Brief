@@ -25,6 +25,9 @@ router.put('/me/interests', authJwt, async (req, res, next) => {
 
     await UserInterest.destroy({ where: { user_id: req.userId } });
     const normalized = [...new Set(interests.map((i) => String(i).trim().toLowerCase()).filter(Boolean))];
+    if (normalized.length < 3) {
+      return res.status(400).json({ error: 'At least 3 interests are required' });
+    }
     await UserInterest.bulkCreate(
       normalized.map((interest) => ({ user_id: req.userId, interest }))
     );
