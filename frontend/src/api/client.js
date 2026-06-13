@@ -42,7 +42,11 @@ export const userApi = {
 };
 
 export const feedApi = {
-  getFeed: (page = 1, limit = 20) => api.get('/api/feed', { params: { page, limit } }),
+  getFeed: (page = 1, limit = 20, topic = null) => {
+    const params = { page, limit };
+    if (topic) params.topic = topic;
+    return api.get('/api/feed', { params });
+  },
 };
 
 export const articleApi = {
