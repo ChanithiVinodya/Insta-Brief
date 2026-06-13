@@ -15,4 +15,9 @@ public interface TrendingTopicRepository extends JpaRepository<TrendingTopicEnti
     @Transactional
     @Query("DELETE FROM TrendingTopicEntity t WHERE t.windowEnd < :cutoff")
     void deleteOlderThan(Instant cutoff);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM TrendingTopicEntity")
+    void deleteAllTopics();
 }
