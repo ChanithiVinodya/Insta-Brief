@@ -18,16 +18,17 @@ public class HuggingFaceNlpClient implements NlpClient {
 
     private static final Logger log = LoggerFactory.getLogger(HuggingFaceNlpClient.class);
     private static final Pattern WORD = Pattern.compile("[a-zA-Z]{3,}");
+    private static final Pattern NON_ALPHA = Pattern.compile("[^a-z0-9\\s'-]");
 
-    public static final Set<String> STOP_WORDS = Set.of(
+    public static final Set<String> STOP_WORDS = Set.copyOf(List.of(
             "the", "is", "a", "an", "and", "or", "but", "more", "here", "this", "that", "with",
             "from", "about", "have", "has", "had", "was", "were", "will", "would", "can",
             "been", "their", "which", "when", "there", "could", "should", "after", "before",
             "other", "into", "over", "under", "between", "through", "during", "without",
             "within", "against", "among", "while", "where", "these", "those", "because",
-            "since", "until", "although", "however", "article", "said", "says", "been",
-            "some", "from", "into", "onto", "your", "them", "ahead", "nearly", "around",
-            "about", "above", "across", "along", "behind", "below", "beneath", "beside",
+            "since", "until", "although", "however", "article", "said", "says",
+            "some", "onto", "your", "them", "ahead", "nearly", "around",
+            "above", "across", "along", "behind", "below", "beneath", "beside",
             "beyond", "concerning", "considering", "despite", "down", "except", "following",
             "inside", "minus", "near", "next", "opposite", "outside", "past", "regarding",
             "round", "save", "than", "toward", "underneath", "unlike", "upon", "versus",
@@ -36,14 +37,14 @@ public class HuggingFaceNlpClient implements NlpClient {
             "many", "few", "any", "all", "each", "every", "both", "either", "neither",
             "only", "also", "even", "instead", "then", "thereby", "therefore", "away",
             "back", "far", "long", "now", "side", "well", "wherever", "whenever",
-            // Additional adverbs/determiners that NLP models wrongly tag as nouns
             "another", "others", "whole", "full", "rather", "likely", "simply", "mainly",
             "mostly", "largely", "heavily", "widely", "closely", "clearly", "quickly",
-            "early", "following", "together", "further", "certain", "enough", "less",
-            "least", "most", "such", "own", "same", "different", "both", "various",
-            "several", "another", "much", "little", "something", "anything", "everything",
+            "early", "together", "further", "certain", "enough", "less",
+            "least", "most", "such", "own", "same", "different", "various",
+            "several", "little", "something", "anything", "everything",
             "nothing", "someone", "anyone", "everyone", "nobody", "somewhere", "anywhere",
-            "everywhere", "nowhere", "somehow", "anyway", "anyhow", "meanwhile");
+            "everywhere", "nowhere", "somehow", "anyway", "anyhow", "meanwhile",
+            "world", "global", "national", "local", "public", "private", "general", "major"));
 
     public static final Set<String> BLACKLIST = Set.of(
             "breaking", "update", "news", "watch", "report", "live", "today", "video",
@@ -51,7 +52,7 @@ public class HuggingFaceNlpClient implements NlpClient {
             "image", "photo", "copyright", "rights", "reserved", "newsletter", "email",
             "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
             "january", "february", "march", "april", "may", "june", "july", "august",
-            "september", "october", "november", "december", "time", "year", "month", "week",
+            "september", "october", "november", "december", "time", "year", "years", "month", "week",
             "day", "hour", "minute", "second", "moment", "period", "story");
 
     private final RestClient restClient;
@@ -60,6 +61,32 @@ public class HuggingFaceNlpClient implements NlpClient {
     public HuggingFaceNlpClient(RestClient restClient, InstaBriefProperties properties) {
         this.restClient = restClient;
         this.properties = properties;
+    }
+
+    public static String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
+        }
+        return NON_ALPHA.matcher(keyword.trim().toLowerCase()).replaceAll("").trim();
+    }
+
+    public static boolean isNoiseKeyword(String keyword) {
+        String normalized = normalizeKeyword(keyword);
+        if (normalized.isBlank() || normalized.length() < 3) {
+            return true;
+        }
+        if (STOP_WORDS.contains(normalized) || BLACKLIST.contains(normalized)) {
+            return true;
+        }
+        for (String token : normalized.split("\\s+")) {
+            if (token.isBlank()) {
+                continue;
+            }
+            if (STOP_WORDS.contains(token) || BLACKLIST.contains(token)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -129,7 +156,12 @@ public class HuggingFaceNlpClient implements NlpClient {
 
             if (response != null && response.has("keywords")) {
                 List<String> keywords = new ArrayList<>();
-                response.get("keywords").forEach(k -> keywords.add(k.asText()));
+                response.get("keywords").forEach(k -> {
+                    String keyword = normalizeKeyword(k.asText());
+                    if (!isNoiseKeyword(keyword)) {
+                        keywords.add(keyword);
+                    }
+                });
                 if (!keywords.isEmpty()) {
                     return keywords;
                 }
@@ -144,9 +176,9 @@ public class HuggingFaceNlpClient implements NlpClient {
 
         while (matcher.find()) {
             String originalWord = matcher.group();
-            String word = originalWord.toLowerCase();
+            String word = normalizeKeyword(originalWord);
 
-            if (STOP_WORDS.contains(word) || BLACKLIST.contains(word)) {
+            if (isNoiseKeyword(word)) {
                 continue;
             }
 
