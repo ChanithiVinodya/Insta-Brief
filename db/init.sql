@@ -85,7 +85,10 @@ CREATE TABLE trending_topics (
     article_count INTEGER NOT NULL DEFAULT 0,
     window_start TIMESTAMPTZ NOT NULL,
     window_end TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    summary TEXT,
+    image_url VARCHAR(1000),
+    category VARCHAR(50)
 );
 
 CREATE INDEX idx_trending_topics_score ON trending_topics (score DESC, window_end DESC);
