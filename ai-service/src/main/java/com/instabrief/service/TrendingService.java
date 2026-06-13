@@ -13,6 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -44,29 +48,28 @@ public class TrendingService {
         Instant windowEnd = Instant.now();
         Instant windowStart = windowEnd.minus(7, ChronoUnit.DAYS);
 
-        // Delete older topics but keep recent ones until recomputed
         trendingTopicRepository.deleteOlderThan(windowStart.minus(30, ChronoUnit.DAYS));
 
         List<Object[]> rows = keywordRepository.findKeywordFrequencyRecent();
         List<TrendingTopicEntity> candidates = new ArrayList<>();
+        List<String> filteredTopics = new ArrayList<>();
 
         for (Object[] row : rows) {
             String topic = (String) row[0];
-            String lowerTopic = topic.toLowerCase();
 
-            // Re-filter against expanded stop words and blacklist to clean existing DB entries
-            if (HuggingFaceNlpClient.STOP_WORDS.contains(lowerTopic) ||
-                    HuggingFaceNlpClient.BLACKLIST.contains(lowerTopic)) {
+            if (HuggingFaceNlpClient.isNoiseKeyword(topic)) {
+                filteredTopics.add(topic);
                 continue;
             }
 
-            // Enforce minimum meaningful length (4 chars) and at least one alphabetic char
-            if (topic.length() < 4 || !topic.matches(".*[a-zA-Z].*")) {
+            String normalizedTopic = HuggingFaceNlpClient.normalizeKeyword(topic);
+            if (normalizedTopic.length() < 4 || !normalizedTopic.matches(".*[a-z].*")) {
+                filteredTopics.add(topic);
                 continue;
             }
 
-            // Skip topics that are purely numeric or contain only symbols
-            if (topic.matches("[\\d\\s\\p{Punct}]+")) {
+            if (normalizedTopic.matches("[\\d\\s\\p{Punct}]+")) {
+                filteredTopics.add(topic);
                 continue;
             }
 
@@ -77,22 +80,16 @@ public class TrendingService {
 
             double engagementBoost = fetchEngagementBoost(topic);
 
-            // Refined Scoring Algorithm:
-            // 1. Frequency (baseline)
-            // 2. Source Diversity (weight 3.0) - very important for global trends
-            // 3. Headline Presence (weight 5.0) - topics in headlines are higher signal
-            // 4. Engagement (weight 0.5 from fetchEngagementBoost)
             double score = (count * 1.5) + (sourceCount * 3.0) + (headlineCount * 5.0) + engagementBoost
                     + (avgScore * 0.1);
 
             TrendingTopicEntity entity = new TrendingTopicEntity();
-            entity.setTopic(topic);
+            entity.setTopic(normalizedTopic);
             entity.setScore(score);
             entity.setArticleCount((int) count);
             entity.setWindowStart(windowStart);
             entity.setWindowEnd(windowEnd);
 
-            // Fetch representative data
             try {
                 Query articleQuery = entityManager.createQuery("""
                         SELECT a FROM ArticleEntity a
@@ -106,29 +103,47 @@ public class TrendingService {
                 if (rep != null) {
                     entity.setSummary(rep.getSummary());
                     entity.setImageUrl(rep.getImageUrl());
-                    // Use source as fallback for category
                     entity.setCategory(rep.getSource());
                 }
             } catch (Exception e) {
-                // No representative articlecan
+                // No representative article
             }
             candidates.add(entity);
         }
 
-        // Sort by score descending and take top 20
         List<TrendingTopicEntity> top20 = candidates.stream()
                 .sorted((a, b) -> Double.compare(b.getScore(), a.getScore()))
                 .limit(20)
                 .collect(Collectors.toList());
 
+        trendingTopicRepository.deleteAllTopics();
+
         for (TrendingTopicEntity entity : top20) {
-            if (entity != null) {
-                trendingTopicRepository.save(entity);
-                updateArticleTrendingScores(entity.getTopic(), entity.getScore());
-            }
+            trendingTopicRepository.save(entity);
+            updateArticleTrendingScores(entity.getTopic(), entity.getScore());
         }
 
-        log.info("Recomputed {} trending topics", top20.size());
+        // #region agent log
+        debugLog("TrendingService.java:recomputeTrending", "trending recompute complete", java.util.Map.of(
+                "hypothesisId", "C",
+                "rowCount", rows.size(),
+                "filteredCount", filteredTopics.size(),
+                "filteredSample", filteredTopics.stream().limit(10).collect(Collectors.toList()),
+                "savedTopics", top20.stream().map(TrendingTopicEntity::getTopic).collect(Collectors.toList())));
+        // #endregion
+
+        log.info("Recomputed {} trending topics (filtered {} noise keywords)", top20.size(), filteredTopics.size());
+    }
+
+    private void debugLog(String location, String message, java.util.Map<String, Object> data) {
+        try {
+            String payload = "{\"sessionId\":\"11efc6\",\"location\":\"" + location + "\",\"message\":\"" + message
+                    + "\",\"data\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(data)
+                    + ",\"timestamp\":" + System.currentTimeMillis() + "}";
+            Files.writeString(Path.of("debug-11efc6.log"), payload + System.lineSeparator(),
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException ignored) {
+        }
     }
 
     private double fetchEngagementBoost(String keyword) {
