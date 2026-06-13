@@ -52,9 +52,13 @@ public class ArticleProcessingService {
                 keywordRepository.deleteByArticleId(article.getId());
                 double weight = keywords.size();
                 for (String keyword : keywords) {
+                    String normalized = com.instabrief.nlp.HuggingFaceNlpClient.normalizeKeyword(keyword);
+                    if (com.instabrief.nlp.HuggingFaceNlpClient.isNoiseKeyword(normalized)) {
+                        continue;
+                    }
                     ArticleKeywordEntity kw = new ArticleKeywordEntity();
                     kw.setArticleId(article.getId());
-                    kw.setKeyword(keyword.toLowerCase());
+                    kw.setKeyword(normalized);
                     kw.setWeight(weight);
                     keywordRepository.save(kw);
                     weight -= 0.1;
