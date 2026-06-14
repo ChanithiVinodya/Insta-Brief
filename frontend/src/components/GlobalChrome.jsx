@@ -90,13 +90,24 @@ export const Navbar = () => {
           fontFamily: 'var(--font-ui)',
           fontWeight: '900'
         }}>Trending</Link>
+        <Link to="/profile" style={{
+          textDecoration: 'none',
+          color: isActive('/profile') ? 'var(--gold)' : 'var(--paper)',
+          fontSize: '18px',
+          textTransform: 'uppercase',
+          letterSpacing: '2.0px',
+          fontFamily: 'var(--font-ui)',
+          fontWeight: '900'
+        }}>Profile</Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
         {user ? (
           <>
             <span style={{ color: 'var(--paper)', fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '14px' }}>
-              {user.displayName || user.username}
+              <Link to="/profile" style={{ color: 'inherit', textDecoration: 'none' }}>
+                {user.displayName || user.username}
+              </Link>
             </span>
             <button className="btn-ghost" onClick={() => { logout(); navigate('/login'); }}>Sign Out</button>
           </>
