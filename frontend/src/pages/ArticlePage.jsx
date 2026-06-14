@@ -60,7 +60,7 @@ export default function ArticlePage() {
       <div className="fade-in-up" style={{ animationDelay: '0.2s', marginBottom: '4rem' }}>
         {article.imageUrl && (
           <figure style={{ margin: 0, position: 'relative' }}>
-            <img src={article.imageUrl} alt="" style={{ width: '100%', height: '500px', objectFit: 'cover', filter: 'grayscale(0.2) contrast(1.1)', border: '1px solid var(--rule)', boxShadow: '15px 15px 0 var(--paper3)' }} />
+            <img src={article.imageUrl} alt="" referrerPolicy="no-referrer" style={{ width: '100%', height: '500px', objectFit: 'cover', filter: 'grayscale(0.2) contrast(1.1)', border: '1px solid var(--rule)', boxShadow: '15px 15px 0 var(--paper3)' }} />
             <figcaption style={{ 
               position: 'absolute', 
               bottom: '-25px', 
