@@ -67,7 +67,22 @@ public class ArticleIngestionService {
         if (draft.getUrl() == null || draft.getTitle() == null) {
             return false;
         }
-        if (articleRepository.findByUrl(draft.getUrl()).isPresent()) {
+        var existingOpt = articleRepository.findByUrl(draft.getUrl());
+        if (existingOpt.isPresent()) {
+            ArticleEntity existing = existingOpt.get();
+            String existingImage = existing.getImageUrl();
+            String newImage = draft.getImageUrl();
+            boolean missingImage = existingImage == null || existingImage.isBlank();
+            boolean hasLogoImage = RssFeedClient.isFeedLogo(existingImage);
+            boolean hasBrokenGuardianImage = existingImage != null
+                    && existingImage.contains("i.guim.co.uk")
+                    && existingImage.contains("width=800");
+            if (newImage != null && !newImage.isBlank()
+                    && (missingImage || hasLogoImage || hasBrokenGuardianImage)) {
+                existing.setImageUrl(newImage);
+                articleRepository.save(existing);
+                return true;
+            }
             return false;
         }
 
