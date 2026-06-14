@@ -1,59 +1,63 @@
 import React, { useEffect, useState } from 'react';
-import { feedApi } from '../api/client';
+import { feedApi, userApi } from '../api/client';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const CATEGORIES = [
-  'All Topics', 'World', 'Politics', 'Technology', 'Health', 
-  'Science', 'Business', 'Sports', 'Entertainment', 'Culture'
-];
+const ALL_TOPICS = 'all';
+
+function matchesInterest(article, interest) {
+  const term = interest.toLowerCase();
+  return (
+    article.keywords?.some((k) => k.toLowerCase().includes(term)) ||
+    article.title.toLowerCase().includes(term) ||
+    (article.summary || '').toLowerCase().includes(term)
+  );
+}
 
 export default function FeedPage() {
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
+  const [userInterests, setUserInterests] = useState([]);
+  const [topicTotal, setTopicTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('All Topics');
+  const [activeInterest, setActiveInterest] = useState(ALL_TOPICS);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initialTopic = searchParams.get('topic');
+  const topicFilter = searchParams.get('topic');
 
   useEffect(() => {
-    feedApi.getFeed().then(res => {
+    userApi.getInterests()
+      .then((res) => setUserInterests(res.data.interests || []))
+      .catch(() => setUserInterests([]));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    if (topicFilter) {
+      setActiveInterest(ALL_TOPICS);
+    }
+
+    const request = topicFilter
+      ? feedApi.getFeed(1, 200, topicFilter)
+      : feedApi.getFeed();
+
+    request.then(res => {
       const data = res.data.data || [];
       setArticles(data);
-      
-      // If we came from a trending topic, filter immediately
-      if (initialTopic) {
-        const filtered = data.filter(a => 
-          a.title.toLowerCase().includes(initialTopic.toLowerCase()) ||
-          a.summary.toLowerCase().includes(initialTopic.toLowerCase()) ||
-          a.keywords.some(k => k.toLowerCase().includes(initialTopic.toLowerCase()))
-        );
-        setFilteredArticles(filtered);
-        setActiveCategory(`Topic: ${initialTopic}`);
-      } else {
-        setFilteredArticles(data);
-      }
-      
+      setFilteredArticles(data);
+      setTopicTotal(res.data.pagination?.total ?? data.length);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [initialTopic]);
+  }, [topicFilter]);
 
   useEffect(() => {
-    if (activeCategory === 'All Topics') {
+    if (topicFilter) return;
+
+    if (activeInterest === ALL_TOPICS) {
       setFilteredArticles(articles);
-    } else if (activeCategory.startsWith('Topic: ')) {
-      // Handled by the initial check, but if user clicks away and back? 
-      // Keep it as is for now.
     } else {
-      // Simple keyword-based categorization for demonstration
-      const filtered = articles.filter(a => 
-        a.keywords.some(k => k.toLowerCase().includes(activeCategory.toLowerCase())) ||
-        a.title.toLowerCase().includes(activeCategory.toLowerCase()) ||
-        a.summary.toLowerCase().includes(activeCategory.toLowerCase())
-      );
-      setFilteredArticles(filtered);
+      setFilteredArticles(articles.filter((a) => matchesInterest(a, activeInterest)));
     }
-  }, [activeCategory, articles]);
+  }, [activeInterest, articles, topicFilter]);
 
   const featured = filteredArticles[0];
   const regular = filteredArticles.slice(1);
@@ -76,17 +80,17 @@ export default function FeedPage() {
         position: 'relative'
       }}>
         <div style={{ fontSize: '12px', letterSpacing: '6px', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '12px', fontWeight: '700' }}>
-          {initialTopic ? `◈ TOPICAL INTELLIGENCE DOSSIER ◈` : `◈ LATEST INTELLIGENCE DISPATCH ◈`}
+          {topicFilter ? `◈ TOPICAL INTELLIGENCE DOSSIER ◈` : `◈ LATEST INTELLIGENCE DISPATCH ◈`}
         </div>
-        <h1 className="heading" style={{ fontSize: '64px', fontWeight: '900', color: 'var(--ink)', lineHeight: 1 }}>
-          {initialTopic ? initialTopic : 'Your Morning Brief'}
+        <h1 className="heading" style={{ fontSize: '64px', fontWeight: '900', color: 'var(--ink)', lineHeight: 1, textTransform: topicFilter ? 'capitalize' : 'none' }}>
+          {topicFilter ? topicFilter : 'Your Morning Brief'}
         </h1>
         <p className="body-text" style={{ fontStyle: 'italic', fontSize: '20px', color: 'var(--muted)', marginTop: '0.5rem' }}>
-          {initialTopic 
-            ? `Comprehensive synthesis of wire reports regarding "${initialTopic}"`
+          {topicFilter
+            ? `${topicTotal} correlated dispatch${topicTotal === 1 ? '' : 'es'} tagged with "${topicFilter}"`
             : "A daily curiosity-driven chronicle of the world's movements."}
         </p>
-        {initialTopic && (
+        {topicFilter && (
           <div style={{ marginTop: '2rem' }}>
              <Link to="/trending" className="btn-vintage" style={{ fontSize: '10px', textDecoration: 'none' }}>
                ← Return to Global Trends
@@ -95,7 +99,8 @@ export default function FeedPage() {
         )}
       </header>
 
-      {/* Category Filter Bar (Moved from Trending) */}
+      {/* Interest filter bar */}
+      {!topicFilter && (
       <div className="fade-in-up" style={{ 
         display: 'flex', 
         gap: '0.8rem', 
@@ -105,45 +110,88 @@ export default function FeedPage() {
         borderBottom: '1px solid var(--paper3)',
         paddingBottom: '1.5rem'
       }}>
-        {CATEGORIES.map(c => (
+        <button 
+          onClick={() => {
+            setActiveInterest(ALL_TOPICS);
+            setSearchParams({});
+          }}
+          className="btn-vintage"
+          style={{
+            background: activeInterest === ALL_TOPICS ? 'var(--ink)' : 'transparent',
+            color: activeInterest === ALL_TOPICS ? 'var(--gold)' : 'var(--muted)',
+            borderColor: activeInterest === ALL_TOPICS ? 'var(--gold)' : 'var(--paper3)',
+            padding: '6px 18px',
+            fontSize: '10px'
+          }}
+        >
+          All Topics
+        </button>
+        {userInterests.map((interest) => (
           <button 
-            key={c}
+            key={interest}
             onClick={() => {
-              setActiveCategory(c);
-              if (c === 'All Topics') setSearchParams({}); // Reset URL params
-            }}
-            className="btn-vintage"
-            style={{
-              background: activeCategory === c ? 'var(--ink)' : 'transparent',
-              color: activeCategory === c ? 'var(--gold)' : 'var(--muted)',
-              borderColor: activeCategory === c ? 'var(--gold)' : 'var(--paper3)',
-              padding: '6px 18px',
-              fontSize: '10px'
-            }}
-          >
-            {c}
-          </button>
-        ))}
-        {activeCategory.startsWith('Topic: ') && (
-          <button 
-            onClick={() => {
-              setActiveCategory('All Topics');
+              setActiveInterest(interest);
               setSearchParams({});
             }}
             className="btn-vintage"
-            style={{ background: 'var(--accent)', color: 'var(--paper)', borderColor: 'var(--accent)', padding: '6px 18px', fontSize: '10px', fontWeight: '900' }}
+            style={{
+              background: activeInterest === interest ? 'var(--ink)' : 'transparent',
+              color: activeInterest === interest ? 'var(--gold)' : 'var(--muted)',
+              borderColor: activeInterest === interest ? 'var(--gold)' : 'var(--paper3)',
+              padding: '6px 18px',
+              fontSize: '10px',
+              textTransform: 'capitalize'
+            }}
           >
-            Clear Filter: {initialTopic} ✕
+            {interest}
           </button>
+        ))}
+        {userInterests.length === 0 && (
+          <Link to="/profile" className="btn-vintage" style={{ fontSize: '10px', textDecoration: 'none' }}>
+            Set up your topic preferences →
+          </Link>
         )}
+        <Link to="/profile" className="btn-vintage" style={{ fontSize: '10px', textDecoration: 'none', borderStyle: 'dashed' }}>
+          Edit preferences
+        </Link>
       </div>
+      )}
+
+      {topicFilter && (
+      <div className="fade-in-up" style={{ 
+        display: 'flex', 
+        gap: '0.8rem', 
+        marginBottom: '3.5rem', 
+        justifyContent: 'center', 
+        flexWrap: 'wrap',
+        borderBottom: '1px solid var(--paper3)',
+        paddingBottom: '1.5rem'
+      }}>
+        <button 
+          onClick={() => {
+            setActiveInterest(ALL_TOPICS);
+            setSearchParams({});
+          }}
+          className="btn-vintage"
+          style={{ background: 'var(--accent)', color: 'var(--paper)', borderColor: 'var(--accent)', padding: '6px 18px', fontSize: '10px', fontWeight: '900' }}
+        >
+          Clear topic: {topicFilter} ✕
+        </button>
+      </div>
+      )}
 
       {/* Empty State */}
       {filteredArticles.length === 0 && (
         <div style={{ textAlign: 'center', padding: '5rem', border: '1px dashed var(--paper3)' }}>
           <h2 className="heading" style={{ fontSize: '32px', color: 'var(--muted)' }}>No Dispatches Located</h2>
-          <p className="body-text" style={{ fontStyle: 'italic' }}>We found no articles matching the "{activeCategory}" frequency.</p>
-          <button className="btn-ghost" style={{ marginTop: '2rem' }} onClick={() => {setActiveCategory('All Topics'); setSearchParams({});}}>Return to Main Feed</button>
+          <p className="body-text" style={{ fontStyle: 'italic' }}>
+            {topicFilter
+              ? `We found no articles tagged with "${topicFilter}".`
+              : activeInterest === ALL_TOPICS
+                ? 'No articles are available in your feed right now.'
+                : `We found no articles matching "${activeInterest}" in your feed.`}
+          </p>
+          <button className="btn-ghost" style={{ marginTop: '2rem' }} onClick={() => { setActiveInterest(ALL_TOPICS); setSearchParams({}); }}>Return to Main Feed</button>
         </div>
       )}
 
@@ -172,7 +220,7 @@ export default function FeedPage() {
               </div>
               <div style={{ display: 'flex', gap: '3rem', marginBottom: '2rem', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
                 {featured.imageUrl && (
-                  <img src={featured.imageUrl} alt="" style={{ width: window.innerWidth < 768 ? '100%' : '45%', height: '400px', objectFit: 'cover', border: '1px solid var(--rule)', boxShadow: '10px 10px 0 var(--paper3)' }} />
+                  <img src={featured.imageUrl} alt="" referrerPolicy="no-referrer" style={{ width: window.innerWidth < 768 ? '100%' : '45%', height: '400px', objectFit: 'cover', border: '1px solid var(--rule)', boxShadow: '10px 10px 0 var(--paper3)' }} />
                 )}
                 <div style={{ flex: 1 }}>
                   <h2 className="heading" style={{ fontSize: '52px', fontWeight: '900', lineHeight: 1, marginBottom: '1.5rem', color: 'var(--ink)' }}>
@@ -253,7 +301,7 @@ function ArticleCard({ article, stagger }) {
           </div>
           <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem', flexDirection: window.innerWidth < 480 ? 'column' : 'row' }}>
             {article.imageUrl && (
-              <img src={article.imageUrl} alt="" style={{ width: window.innerWidth < 480 ? '100%' : '140px', height: '140px', objectFit: 'cover', border: '1px solid var(--rule)', boxShadow: '5px 5px 0 var(--paper3)' }} />
+              <img src={article.imageUrl} alt="" referrerPolicy="no-referrer" style={{ width: window.innerWidth < 480 ? '100%' : '140px', height: '140px', objectFit: 'cover', border: '1px solid var(--rule)', boxShadow: '5px 5px 0 var(--paper3)' }} />
             )}
             <div style={{ flex: 1 }}>
               <h3 className="heading" style={{ fontSize: '28px', fontWeight: '900', lineHeight: 1.2, marginBottom: '1rem' }}>
@@ -265,7 +313,7 @@ function ArticleCard({ article, stagger }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {article.tags?.slice(0, 4).map(tag => (
+            {article.keywords?.slice(0, 4).map(tag => (
               <span key={tag} className="ui-label" style={{
                 background: 'var(--tag-bg)',
                 color: 'var(--tag-fg)',
