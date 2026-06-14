@@ -52,6 +52,8 @@ export const TrendingTopic = sequelize.define('TrendingTopic', {
   article_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
   window_start: { type: DataTypes.DATE, allowNull: false },
   window_end: { type: DataTypes.DATE, allowNull: false },
+  summary: { type: DataTypes.TEXT },
+  image_url: { type: DataTypes.TEXT },
 }, { tableName: 'trending_topics', updatedAt: false });
 
 User.hasMany(UserInterest, { foreignKey: 'user_id' });
