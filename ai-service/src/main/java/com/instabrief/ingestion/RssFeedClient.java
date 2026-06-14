@@ -4,24 +4,42 @@ import com.instabrief.config.InstaBriefProperties;
 import com.instabrief.normalization.ContentNormalizer;
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayInputStream;
+import java.net.URI;
 import java.net.URL;
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class RssFeedClient {
 
     private static final Logger log = LoggerFactory.getLogger(RssFeedClient.class);
+    private static final Pattern ITEM_PATTERN = Pattern.compile(
+            "<item\\b[\\s\\S]*?</item>",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern LINK_TAG_PATTERN = Pattern.compile(
+            "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</link>",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEDIA_URL_PATTERN = Pattern.compile(
+            "media:(?:content|thumbnail)\\b[^>]*?\\burl=[\"']([^\"']+)[\"']",
+            Pattern.CASE_INSENSITIVE);
 
     private final InstaBriefProperties properties;
     private final ContentNormalizer normalizer;
@@ -53,8 +71,15 @@ public class RssFeedClient {
 
     private List<ArticleDraft> fetchFeed(String feedUrl) throws Exception {
         List<ArticleDraft> drafts = new ArrayList<>();
+        String rawXml;
+        try (var stream = new URL(feedUrl).openStream()) {
+            rawXml = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        Map<String, String> imagesByLink = extractImagesFromRawXml(rawXml);
+
         SyndFeedInput input = new SyndFeedInput();
-        SyndFeed feed = input.build(new XmlReader(new URL(feedUrl).openStream()));
+        SyndFeed feed = input.build(new XmlReader(
+                new ByteArrayInputStream(rawXml.getBytes(StandardCharsets.UTF_8))));
         String source = "rss:" + feed.getTitle();
 
         for (SyndEntry entry : feed.getEntries()) {
@@ -74,76 +99,74 @@ public class RssFeedClient {
             if (entry.getPublishedDate() != null) {
                 draft.setPublishedAt(entry.getPublishedDate().toInstant());
             } else {
-                draft.setPublishedAt(Instant.now());
+                draft.setPublishedAt(java.time.Instant.now());
             }
-            
-            // Extract image URL from the entry content or feed metadata
-            String imageUrl = extractImageUrl(entry, feed, body);
+
+            String imageUrl = extractImageUrl(entry, body, imagesByLink);
             if (imageUrl != null && !imageUrl.isBlank()) {
                 draft.setImageUrl(imageUrl);
             }
-            
+
             drafts.add(draft);
         }
         log.info("Fetched {} entries from RSS {}", drafts.size(), feedUrl);
         return drafts;
     }
 
-    /**
-     * Extract image URL from an RSS entry.
-     * Attempts to find images from multiple sources:
-     * 1. Entry enclosures (for image types)
-     * 2. Media extensions (if available)
-     * 3. Feed-level image as fallback
-     */
-    private String extractImageUrl(SyndEntry entry, SyndFeed feed, String bodyHtml) {
-        try {
-            // Try to get image from enclosures (looks for image MIME types)
-            if (entry.getEnclosures() != null && !entry.getEnclosures().isEmpty()) {
-                for (Object enclosure : entry.getEnclosures()) {
-                    // Rome returns SyndEnclosure objects
-                    String type = getEnclosureType(enclosure);
-                    if (type != null && type.startsWith("image/")) {
-                        String url = getEnclosureUrl(enclosure);
-                        if (url != null && !url.isBlank()) {
-                            log.debug("Found image from enclosure: {}", url);
-                            return url;
-                        }
-                    }
-                }
+    private Map<String, String> extractImagesFromRawXml(String rawXml) {
+        Map<String, String> imagesByLink = new HashMap<>();
+        Matcher itemMatcher = ITEM_PATTERN.matcher(rawXml);
+        while (itemMatcher.find()) {
+            String itemXml = itemMatcher.group();
+            Matcher linkMatcher = LINK_TAG_PATTERN.matcher(itemXml);
+            if (!linkMatcher.find()) {
+                continue;
             }
 
-            // Try to get image from entry content blocks
-            String contentImage = extractImageUrlFromEntryContent(entry);
-            if (contentImage != null && !contentImage.isBlank()) {
-                log.debug("Found image from entry content: {}", contentImage);
-                return contentImage;
+            String link = normalizeLink(linkMatcher.group(1));
+            if (link == null || link.isBlank()) {
+                continue;
             }
 
-            // Try to get image from HTML body content
-            String bodyImage = extractImageUrlFromHtml(bodyHtml);
-            if (bodyImage != null && !bodyImage.isBlank()) {
-                log.debug("Found image from HTML body: {}", bodyImage);
-                return bodyImage;
-            }
-
-            // Try to get image from media extensions (media:content, media:thumbnail)
-            if (entry.getModule("http://search.yahoo.com/mrss/") != null) {
-                Object mediaModule = entry.getModule("http://search.yahoo.com/mrss/");
-                String imageUrl = extractFromMediaModule(mediaModule);
+            Matcher mediaMatcher = MEDIA_URL_PATTERN.matcher(itemXml);
+            while (mediaMatcher.find()) {
+                String imageUrl = normalizeImageUrl(mediaMatcher.group(1), link);
                 if (imageUrl != null && !imageUrl.isBlank()) {
-                    log.debug("Found image from media extension: {}", imageUrl);
-                    return imageUrl;
+                    imagesByLink.put(link, imageUrl);
+                    break;
+                }
+            }
+        }
+        return imagesByLink;
+    }
+
+    private String extractImageUrl(SyndEntry entry, String bodyHtml, Map<String, String> imagesByLink) {
+        try {
+            if (entry.getLink() != null) {
+                String fromRawXml = imagesByLink.get(normalizeLink(entry.getLink()));
+                if (fromRawXml != null) {
+                    return fromRawXml;
                 }
             }
 
-            // Try to get image from feed level
-            if (feed.getImage() != null && feed.getImage().getUrl() != null) {
-                String feedImageUrl = feed.getImage().getUrl();
-                if (!feedImageUrl.isBlank()) {
-                    log.debug("Using feed-level image: {}", feedImageUrl);
-                    return feedImageUrl;
-                }
+            String fromEnclosure = extractFromEnclosures(entry);
+            if (fromEnclosure != null) {
+                return normalizeImageUrl(fromEnclosure, entry.getLink());
+            }
+
+            String fromContent = extractImageUrlFromEntryContent(entry);
+            if (fromContent != null) {
+                return normalizeImageUrl(fromContent, entry.getLink());
+            }
+
+            String fromBody = extractImageUrlFromHtml(bodyHtml);
+            if (fromBody != null) {
+                return normalizeImageUrl(fromBody, entry.getLink());
+            }
+
+            String fromRawMedia = extractMediaUrlFromRawMarkup(entry);
+            if (fromRawMedia != null) {
+                return normalizeImageUrl(fromRawMedia, entry.getLink());
             }
         } catch (Exception e) {
             log.debug("Error extracting image URL from RSS entry: {}", e.getMessage());
@@ -152,76 +175,50 @@ public class RssFeedClient {
         return null;
     }
 
-    private String getEnclosureUrl(Object enclosure) {
-        try {
-            // Rome's SyndEnclosure has getUrl() method
-            return (String) enclosure.getClass().getMethod("getUrl").invoke(enclosure);
-        } catch (Exception e) {
-            log.debug("Error getting enclosure URL: {}", e.getMessage());
+    private String extractFromEnclosures(SyndEntry entry) {
+        if (entry.getEnclosures() == null) {
             return null;
         }
-    }
-
-    private String getEnclosureType(Object enclosure) {
-        try {
-            // Rome's SyndEnclosure has getType() method
-            return (String) enclosure.getClass().getMethod("getType").invoke(enclosure);
-        } catch (Exception e) {
-            log.debug("Error getting enclosure type: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private String extractFromMediaModule(Object mediaModule) {
-        try {
-            // Try to get content list
-            Object content = mediaModule.getClass().getMethod("getContent").invoke(mediaModule);
-            if (content != null && content instanceof java.util.List) {
-                java.util.List<?> contentList = (java.util.List<?>) content;
-                if (!contentList.isEmpty()) {
-                    Object firstContent = contentList.get(0);
-                    Object url = firstContent.getClass().getMethod("getUrl").invoke(firstContent);
-                    if (url != null) {
-                        return url.toString();
-                    }
-                }
+        for (SyndEnclosure enclosure : entry.getEnclosures()) {
+            if (enclosure == null) {
+                continue;
             }
-
-            // Try to get thumbnails
-            Object thumbnail = mediaModule.getClass().getMethod("getThumbnail").invoke(mediaModule);
-            if (thumbnail != null && thumbnail instanceof java.util.List) {
-                java.util.List<?> thumbnailList = (java.util.List<?>) thumbnail;
-                if (!thumbnailList.isEmpty()) {
-                    Object firstThumbnail = thumbnailList.get(0);
-                    Object url = firstThumbnail.getClass().getMethod("getUrl").invoke(firstThumbnail);
-                    if (url != null) {
-                        return url.toString();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.debug("Error extracting from media module: {}", e.getMessage());
-        }
-
-        return null;
-    }
-
-    private String extractImageUrlFromEntryContent(SyndEntry entry) {
-        try {
-            if (entry.getContents() == null || entry.getContents().isEmpty()) {
-                return null;
-            }
-            for (SyndContent content : entry.getContents()) {
-                if (content == null || content.getValue() == null) {
-                    continue;
-                }
-                String url = extractImageUrlFromHtml(content.getValue());
+            String type = enclosure.getType();
+            if (type != null && type.startsWith("image/")) {
+                String url = enclosure.getUrl();
                 if (url != null && !url.isBlank()) {
                     return url;
                 }
             }
-        } catch (Exception e) {
-            log.debug("Error extracting image URL from entry content: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private String extractMediaUrlFromRawMarkup(SyndEntry entry) {
+        if (entry.getForeignMarkup() == null || entry.getForeignMarkup().isEmpty()) {
+            return null;
+        }
+        StringBuilder markup = new StringBuilder();
+        entry.getForeignMarkup().forEach(node -> markup.append(node.toString()));
+        Matcher matcher = MEDIA_URL_PATTERN.matcher(markup);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
+    private String extractImageUrlFromEntryContent(SyndEntry entry) {
+        if (entry.getContents() == null || entry.getContents().isEmpty()) {
+            return null;
+        }
+        for (SyndContent content : entry.getContents()) {
+            if (content == null || content.getValue() == null) {
+                continue;
+            }
+            String url = extractImageUrlFromHtml(content.getValue());
+            if (url != null && !url.isBlank()) {
+                return url;
+            }
         }
         return null;
     }
@@ -231,14 +228,67 @@ public class RssFeedClient {
             return null;
         }
         try {
-            org.jsoup.nodes.Document document = Jsoup.parse(html);
-            org.jsoup.nodes.Element img = document.selectFirst("img[src]");
+            Document document = Jsoup.parse(html);
+            Element img = document.selectFirst("img[src], img[data-src]");
             if (img != null) {
-                return img.attr("src").trim();
+                String src = img.hasAttr("src") ? img.attr("src") : img.attr("data-src");
+                if (src != null && !src.isBlank()) {
+                    return src.trim();
+                }
             }
         } catch (Exception e) {
             log.debug("Error parsing HTML image URL: {}", e.getMessage());
         }
         return null;
+    }
+
+    String normalizeImageUrl(String imageUrl, String entryLink) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+
+        String normalized = imageUrl.trim()
+                .replaceAll("\\s+", "")
+                .replace("&amp;", "&");
+        if (normalized.startsWith("//")) {
+            normalized = "https:" + normalized;
+        } else if (!normalized.startsWith("http://") && !normalized.startsWith("https://") && entryLink != null) {
+            try {
+                normalized = URI.create(entryLink).resolve(normalized).toString();
+            } catch (Exception e) {
+                log.debug("Could not resolve relative image URL {}: {}", normalized, e.getMessage());
+                return null;
+            }
+        }
+
+        normalized = normalized.replace("/ace/standard/240/", "/ace/standard/976/");
+        if (!normalized.contains("i.guim.co.uk") && !normalized.contains("&s=")) {
+            normalized = normalized.replace("width=140", "width=800");
+        }
+
+        if (normalized.isBlank() || isFeedLogo(normalized)) {
+            return null;
+        }
+
+        return normalized;
+    }
+
+    private String normalizeLink(String link) {
+        if (link == null) {
+            return null;
+        }
+        return link.trim()
+                .replace("&amp;", "&")
+                .replaceAll("\\s+", "");
+    }
+
+    public static boolean isFeedLogo(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return false;
+        }
+        String lower = imageUrl.toLowerCase();
+        return lower.contains("bbc_news_120x60")
+                || lower.contains("guardian-logo-rss")
+                || lower.contains("nyt_logo_rss");
     }
 }
