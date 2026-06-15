@@ -9,6 +9,7 @@ import OnboardingPage from './pages/OnboardingPage.jsx';
 import FeedPage from './pages/FeedPage.jsx';
 import ArticlePage from './pages/ArticlePage.jsx';
 import TrendingPage from './pages/TrendingPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 
 export default function App() {
   return (
@@ -51,6 +52,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requireOnboarding>
                     <TrendingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute requireOnboarding>
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />
