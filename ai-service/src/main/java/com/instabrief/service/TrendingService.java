@@ -119,6 +119,7 @@ public class TrendingService {
         trendingTopicRepository.deleteAllTopics();
 
         for (TrendingTopicEntity entity : top20) {
+            if (entity == null) continue;
             trendingTopicRepository.save(entity);
             updateArticleTrendingScores(entity.getTopic(), entity.getScore());
         }
