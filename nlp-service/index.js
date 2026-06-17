@@ -1,13 +1,23 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { rateLimit } = require('express-rate-limit');
 const nlp = require('compromise');
 
 const app = express();
 const PORT = process.env.PORT || 3005;
 
 app.use(cors());
-app.use(bodyParser.json({ limit: '2mb' }));
+app.use(express.json({ limit: '2mb' }));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests from this IP, please try again after 15 minutes' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use(limiter);
 
 // Comprehensive stop-words: articles, pronouns, prepositions, conjunctions, adverbs, common verbs
 const STOP_WORDS = new Set([
@@ -135,7 +145,7 @@ app.post('/keywords', (req, res) => {
             .map(entry => entry[0]);
 
         // #region agent log
-        fetch('http://127.0.0.1:7489/ingest/a4e5ad49-7eae-456f-84eb-603849701193',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'11efc6'},body:JSON.stringify({sessionId:'11efc6',location:'nlp-service/index.js:keywords',message:'keyword extraction result',data:{hypothesisId:'A',accepted:sorted,rejectedSample:rejected.slice(0,10),rejectedCount:rejected.length},timestamp:Date.now()})}).catch(()=>{});
+        fetch('http://127.0.0.1:7489/ingest/a4e5ad49-7eae-456f-84eb-603849701193', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '11efc6' }, body: JSON.stringify({ sessionId: '11efc6', location: 'nlp-service/index.js:keywords', message: 'keyword extraction result', data: { hypothesisId: 'A', accepted: sorted, rejectedSample: rejected.slice(0, 10), rejectedCount: rejected.length }, timestamp: Date.now() }) }).catch(() => { });
         // #endregion
 
         res.json({ keywords: sorted });
