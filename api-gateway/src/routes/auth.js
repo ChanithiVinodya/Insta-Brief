@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { authJwt } from '../middleware/authJwt.js';
 import * as authService from '../services/authService.js';
 import { User } from '../models/index.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const { email, password, displayName } = req.body;
     if (!email || !password || !displayName) {
@@ -18,7 +19,7 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
