@@ -10,7 +10,13 @@ import articleRoutes from './routes/articles.js';
 import interactionRoutes from './routes/interactions.js';
 import trendingRoutes from './routes/trending.js';
 
+import { generalLimiter, authLimiter } from './middleware/rateLimiter.js';
+
 const app = express();
+
+// Apply general rate limiter to all requests
+app.use(generalLimiter);
+
 
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json());
