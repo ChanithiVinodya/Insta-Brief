@@ -1,113 +1,163 @@
+<div align="center">
+
 # 📰 InstaBrief
 
-> AI-powered news aggregation and personalized summarization platform.
+**AI-powered news aggregation and personalized summarization platform**
 
-🧠 What is InstaBrief?
+*Stop scrolling. Start knowing.*
+
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.java.com/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+
+</div>
+
+---
+
+## 🧠 What is InstaBrief?
+
 InstaBrief is a full-stack, production-grade web application that aggregates news from across the internet and uses AI to deliver what actually matters — summarized, personalized, and ranked for each user.
+
 The platform:
+- **Ingests** articles from NewsAPI, RSS feeds, and configurable sources in real time
+- **Summarizes** each article into 2–5 clean sentences using NLP (Hugging Face / OpenAI)
+- **Extracts** keywords and computes trending topics from engagement and recency signals
+- **Personalizes** each user's feed using a weighted ranking algorithm based on interests, behavior, and trends
+- **Scales** via a microservices architecture — a dedicated AI service handles all NLP; an API gateway handles all user-facing logic
 
-Ingests articles from NewsAPI, RSS feeds, and configurable sources in real time
-Summarizes each article into 2–5 clean sentences using NLP (Hugging Face / OpenAI)
-Extracts keywords and computes trending topics from engagement and recency signals
-Personalizes each user's feed using a weighted ranking algorithm based on interests, behavior, and trends
-Scales via a microservices architecture — a dedicated AI service handles all NLP; an API gateway handles all user-facing logic
-
----
-
-## ✨ Features
-
-- **AI Summarization** — Generates concise 2–5 sentence summaries using Hugging Face or OpenAI APIs
-- **Multi-source Aggregation** — Pulls articles from NewsAPI, RSS feeds, and other configurable sources
-- **Keyword Extraction** — Identifies key topics from article content automatically
-- **Personalized Feed** — Ranks articles using a weighted scoring system based on user interests, keyword relevance, recency, and trending score
-- **Trending Topics** — Computes trending topics from keyword frequency, article recency, and engagement data
-- **JWT Authentication** — Secure login/register with bcrypt password hashing and protected routes
-- **Responsive UI** — Clean, modern React frontend with proper loading and error states
+> Built as a portfolio-grade engineering project demonstrating real-world system design, AI integration, and full-stack development across two languages and three infrastructure layers.
 
 ---
 
-## 🏗️ Architecture
+## ✨ Core Features
 
-InstaBrief uses a **microservices-inspired architecture** with two backend services sharing a PostgreSQL database.
+| Feature | Description |
+|---|---|
+| 🔐 JWT Auth | Secure register/login with bcrypt password hashing and protected routes |
+| 📡 Multi-source Aggregation | Fetches and deduplicates articles from NewsAPI, RSS feeds, and more |
+| 🤖 AI Summarization | 2–5 sentence summaries generated via Hugging Face or OpenAI APIs |
+| 🏷️ Keyword Extraction | NLP-powered extraction of key topics per article |
+| 🎯 Personalized Feed | Weighted scoring: user interests × keyword relevance × recency × trending score |
+| 🔥 Trending Topics | Computed from keyword frequency, article recency, and user engagement |
+| 📱 Responsive UI | Clean, modern interface with smooth loading states and error handling |
+
+---
+
+## 🏗️ System Architecture
+
+InstaBrief uses a **microservices-inspired architecture** with strict service separation. Two independent backend services communicate only through a shared PostgreSQL database — keeping concerns cleanly decoupled and each service independently deployable.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Frontend (React)                    │
-└─────────────────────┬───────────────────────────────────┘
-                      │ REST
-┌─────────────────────▼───────────────────────────────────┐
-│               API Gateway (Node.js / Express)            │
-│   Auth · User Management · Personalized Feed · Interactions │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-              ┌───────▼────────┐
-              │   PostgreSQL   │
-              └───────▲────────┘
-                      │
-┌─────────────────────┴───────────────────────────────────┐
-│              AI Service (Java / Spring Boot)             │
-│   Article Ingestion · NLP · Summarization · Trending     │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        React Frontend (Vite)                     │
+│              Feed · Article View · Trending · Auth               │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │  REST / JSON
+                            ▼
+┌──────────────────────────────────────────────────────────────────┐
+│               API Gateway  ·  Node.js + Express.js               │
+│                                                                  │
+│   JWT Auth  ·  User Management  ·  Feed API  ·  Interactions     │
+│                                                                  │
+│      ⛔ No NLP   ⛔ No article fetching   ⛔ No summarization     │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │
+                   ┌────────▼────────┐
+                   │   PostgreSQL    │
+                   │  Shared schema  │
+                   │  SQL-managed    │
+                   └────────▲────────┘
+                            │
+┌──────────────────────────────────────────────────────────────────┐
+│              AI Service  ·  Java + Spring Boot                   │
+│                                                                  │
+│   Article Ingestion  ·  NLP  ·  Summarization  ·  Trending       │
+│                                                                  │
+│      ⛔ No user auth   ⛔ No frontend APIs   ⛔ No user data      │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-**Separation of concerns:**
-- The **API Gateway** handles auth, user data, and serving the frontend — it never performs NLP or fetches external articles.
-- The **AI Service** owns all article ingestion, NLP processing, and trending analysis — it writes processed data to the shared database.
+**Why this matters:** The API Gateway and AI Service can be scaled, updated, and redeployed independently. NLP workloads never block user-facing requests. This mirrors how production news platforms are built at scale.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React.js (Vite), Tailwind CSS, Axios |
-| API Gateway | Node.js, Express.js, Sequelize ORM |
-| AI Service | Java, Spring Boot, JPA/Hibernate |
-| Database | PostgreSQL |
-| NLP | Hugging Face Transformers / OpenAI API |
-| Infrastructure | Docker, Docker Compose |
+### Frontend
+| | Technology | Purpose |
+|---|---|---|
+| ⚛️ | React.js (Vite) | UI framework with fast HMR dev experience |
+| 🎨 | Tailwind CSS | Utility-first responsive styling |
+| 🔗 | Axios | HTTP client for REST API calls |
 
-## 🗄️ Database Schema
+### API Gateway
+| | Technology | Purpose |
+|---|---|---|
+| 🟢 | Node.js + Express.js | REST API server, routing, middleware |
+| 🔑 | JWT + bcrypt | Stateless auth and password security |
+| 🗃️ | Sequelize ORM | PostgreSQL interaction (no sync — SQL-only schema) |
 
-The schema is managed **exclusively through SQL initialization scripts** — no Sequelize sync, no Hibernate DDL auto-generation.
+### AI Service
+| | Technology | Purpose |
+|---|---|---|
+| ☕ | Java + Spring Boot | High-throughput article processing pipeline |
+| 🤗 | Hugging Face / OpenAI | NLP summarization and keyword extraction |
+| 🗃️ | JPA / Hibernate | Database access (ddl-auto disabled — SQL-only) |
 
-Core tables:
+### Infrastructure
+| | Technology | Purpose |
+|---|---|---|
+| 🐘 | PostgreSQL | Shared relational DB with UUID PKs and FK constraints |
+| 🐳 | Docker + Compose | Containerized multi-service local and cloud deployment |
 
-| Table | Description |
-|---|---|
-| `users` | User accounts (UUID PK, bcrypt hashed passwords) |
-| `user_interests` | Many-to-many user ↔ topic interests |
-| `articles` | Normalized articles with summaries and metadata |
-| `article_keywords` | Extracted keywords per article |
-| `user_interactions` | Reads, likes, shares — used for personalization |
-| `trending_topics` | Computed trending topic scores |
+---
+
+## 🗄️ Database Design
+
+The schema is defined **exclusively through SQL initialization scripts** — no ORM auto-generation, no `Sequelize sync`, no Hibernate `ddl-auto`. This enforces deliberate, stable schema design with full control over indexes, constraints, and foreign key relationships.
+
+```
+users ──────────────── user_interests
+  │                         │
+  │                    (topic tags)
+  │
+  ├──── user_interactions ──────── articles ─── article_keywords
+  │         (reads, likes,
+  │          shares)
+  │
+  └─────────────────────── trending_topics
+```
+
+Every table uses **UUID primary keys**. Indexed searchable fields and all relationships are defined explicitly in `db/init.sql`.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - [Docker](https://www.docker.com/) and Docker Compose
-- A [NewsAPI](https://newsapi.org/) key
-- A Hugging Face or OpenAI API key
+- [NewsAPI key](https://newsapi.org/)
+- Hugging Face or OpenAI API key
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/your-username/instabrief.git
 cd instabrief
 ```
 
-### 2. Configure environment variables
+### 2. Configure environment
 
 Create a `.env` file in the project root:
 
 ```env
-# PostgreSQL
+# Database
 POSTGRES_DB=instabrief
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_password
+POSTGRES_PASSWORD=your_secure_password
 
 # API Gateway
 JWT_SECRET=your_jwt_secret
@@ -116,46 +166,98 @@ DB_PORT=5432
 
 # AI Service
 NEWS_API_KEY=your_newsapi_key
-OPENAI_API_KEY=your_openai_key        # or use Hugging Face
+OPENAI_API_KEY=your_openai_key
 HUGGINGFACE_API_KEY=your_hf_key
-DB_HOST=postgres
-DB_PORT=5432
 
 # Frontend
 VITE_API_BASE_URL=http://localhost:3000
 ```
 
-## 📄 API Overview
+> ⚠️ Both services will **fail loudly** on startup if any required environment variable is missing, the database connection fails, or an external API is unreachable. No silent failures.
 
-The API Gateway exposes REST endpoints to the frontend. All responses return structured JSON with appropriate HTTP status codes.
+### 3. Start all services
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/auth/register` | Register a new user |
-| `POST` | `/auth/login` | Login and receive JWT |
-| `GET` | `/feed` | Get personalized article feed |
-| `GET` | `/articles/:id` | Get a single article |
-| `GET` | `/trending` | Get trending topics |
-| `POST` | `/interactions` | Log a user interaction |
-| `PUT` | `/users/interests` | Update user interests |
+```bash
+docker-compose up --build
+```
+
+Spins up four services on a shared Docker network:
+- `postgres` — PostgreSQL with persistent volume, initialized from `db/init.sql`
+- `api-gateway` — Node.js on port `3000`
+- `ai-service` — Spring Boot on port `8080`
+- `frontend` — React on port `5173`
+
+### 4. Visit the app
+
+```
+http://localhost:5173
+```
 
 ---
 
-## 🧪 Development Notes
+## 📄 REST API
 
-- **No schema auto-generation** — always edit `db/init.sql` for schema changes
-- **Strict service boundaries** — the API Gateway must not call NLP; the AI Service must not serve user-facing endpoints
-- **Fail loudly** — missing env vars or failed DB/API connections throw immediately, never silently
-- Code follows a modular folder structure; avoid giant files and magic values
-## Screenshots
-<img width="1903" height="986" alt="Screenshot 2026-06-10 200341" src="https://github.com/user-attachments/assets/ece44899-4e03-44f9-afb1-a6f06737153f" />
-<img width="1898" height="960" alt="Screenshot 2026-06-10 200419" src="https://github.com/user-attachments/assets/36e80df9-ef88-42e4-ac1b-dad4daeb6d1e" />
-<img width="1863" height="964" alt="image" src="https://github.com/user-attachments/assets/0e33ee5f-139b-4ae9-85c6-cc3bf53d3a46" />
-<img width="1814" height="968" alt="image" src="https://github.com/user-attachments/assets/c8e34519-5e9c-49b0-be4e-e6c186bc4ca9" />
+The API Gateway exposes a clean REST interface with pagination, structured JSON responses, and consistent HTTP status codes.
 
+```
+POST   /auth/register          Register a new user
+POST   /auth/login             Authenticate and receive JWT
+
+GET    /feed                   Personalized article feed        [auth]
+GET    /feed?page=2&limit=20   Paginated feed
+
+GET    /articles/:id           Single article with summary      [auth]
+POST   /interactions           Log a read, like, or share       [auth]
+
+GET    /trending               Trending topics                  [auth]
+PUT    /users/interests        Update interest profile          [auth]
+```
+
+---
+
+## 📁 Project Structure
+
+```
+instabrief/
+├── frontend/
+│   └── src/
+│       ├── components/        Reusable UI components
+│       ├── pages/             Login · Register · Onboarding · Feed · Article · Trending
+│       └── services/          Axios API clients
+│
+├── api-gateway/
+│   └── src/
+│       ├── routes/            Auth · feed · interaction endpoints
+│       ├── middleware/         JWT verification · error handling
+│       └── models/            Sequelize model definitions
+│
+├── ai-service/
+│   └── src/main/java/
+│       ├── ingestion/         NewsAPI + RSS fetchers
+│       ├── nlp/               Summarization · keyword extraction
+│       └── trending/          Trending score computation
+│
+├── db/
+│   └── init.sql               Full schema — single source of truth
+│
+└── docker-compose.yml
+```
+
+---
+
+## 🎯 Engineering Highlights
+
+This project was designed to reflect real-world backend engineering practices:
+
+- **Strict service boundaries** — NLP workloads fully decoupled from user-facing APIs, enforced at the architectural level
+- **Schema-first database design** — explicit SQL migrations with FK constraints and indexes; no ORM magic
+- **Personalization engine** — multi-factor weighted ranking algorithm, not a simple chronological feed
+- **Fail-loud principle** — services crash immediately on misconfiguration; never silently degrade
+- **Containerized from the start** — full Docker Compose stack, fully environment-driven configuration
+- **Modular, maintainable code** — no god files, no tight coupling, no magic values throughout
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.
