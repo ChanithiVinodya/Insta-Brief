@@ -31,6 +31,8 @@ The platform:
 > Built as a portfolio-grade engineering project demonstrating real-world system design, AI integration, and full-stack development across two languages and three infrastructure layers.
 
 ---
+## 📸 **Screenshots**
+
 
 ## ✨ Core Features
 
