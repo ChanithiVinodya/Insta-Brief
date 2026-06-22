@@ -41,7 +41,8 @@ The platform:
 <tr>
 <td width="33%"><img width="100%" alt="Morning brief feed" src="https://github.com/user-attachments/assets/3834dbf4-171e-4aee-81be-f33b502cd185" /><p align="center"><sub><b>Personalized morning brief</b></sub></p></td>
 <td width="33%"><img width="100%" alt="Trending topics breakdown" src="https://github.com/user-attachments/assets/6eb1787c-dfc2-474a-a3a5-6e92c464a4ed" /><p align="center"><sub><b>Trending topics breakdown</b></sub></p></td>
-<td width="33%"><img width="100%" alt="Article view with AI summary" src="https://github.com/user-attachments/assets/952bdbae-6253-41a1-b2eb-1c553cc39a91" /><p align="center"><sub><b>Article view with AI summary</b></sub></p></td>
+<td width="33%"><img width="1537" height="972" alt="Screenshot 2026-06-23 011606" src="https://github.com/user-attachments/assets/ababce84-4282-45af-b28c-57bab8e5c998" />
+<p align="center"><sub><b>Article view with AI summary</b></sub></p></td>
 </tr>
 <tr>
 <td width="33%"><img width="100%" alt="Reader interest preferences" src="https://github.com/user-attachments/assets/db7e9fc5-6321-4737-9f9e-b35a6b44c4e8" /><p align="center"><sub><b>Global coverage index</b></sub></p></td>
