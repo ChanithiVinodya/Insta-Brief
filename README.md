@@ -34,17 +34,21 @@ The platform:
 ## 📸 Screenshots
 <table>
 <tr>
-<td><img src="<img width="1900" height="983" alt="Screenshot 2026-06-23 003903" src="https://github.com/user-attachments/assets/4728a5ae-bfef-46de-93bb-99da34ade1f0" />
-" width="400"/></td>
-<td><img src="<img width="1897" height="987" alt="Screenshot 2026-06-23 001938" src="https://github.com/user-attachments/assets/a54d0f67-80d0-493c-b548-4d37159f6e12" />
-" width="400"/></td>
+<td><img width="1907" height="982" alt="image" src="https://github.com/user-attachments/assets/a7e4e039-e028-4a2a-adbb-3a608d9b3e6b" /></td>
+<td><img width="1900" height="983" alt="Screenshot 2026-06-23 003903" src="https://github.com/user-attachments/assets/3834dbf4-171e-4aee-81be-f33b502cd185" /></td>
+<td><img width="1897" height="987" alt="Screenshot 2026-06-23 001938" src="https://github.com/user-attachments/assets/6eb1787c-dfc2-474a-a3a5-6e92c464a4ed" /></td>
 </tr>
 <tr>
-<td align="center"><sub>Personalized feed</sub></td>
-<td align="center"><sub>Article view with AI summary</sub></td>
+<td><img width="1900" height="847" alt="Screenshot 2026-06-23 002247" src="https://github.com/user-attachments/assets/7a4b6ad2-e236-49ce-8246-7657ced2ca59" /></td>
+<td><img width="1896" height="946" alt="Screenshot 2026-06-23 002307" src="https://github.com/user-attachments/assets/f23bf058-9d5e-42fd-b9d0-71fede4b8600" /></td>
+<td><img width="1900" height="986" alt="Screenshot 2026-06-23 002332" src="https://github.com/user-attachments/assets/db7e9fc5-6321-4737-9f9e-b35a6b44c4e8" /></td>
+</tr>
+<tr>
+<td><img width="1918" height="990" alt="Screenshot 2026-06-23 002345" src="https://github.com/user-attachments/assets/ca3572dd-1971-4661-951d-392ff951cc98" /></td>
+<td><img width="1895" height="987" alt="Screenshot 2026-06-23 005027" src="https://github.com/user-attachments/assets/448b50ea-d109-4b3a-a655-d8764886770d" /></td>
+<td><img width="1896" height="922" alt="Screenshot 2026-06-23 005040" src="https://github.com/user-attachments/assets/952bdbae-6253-41a1-b2eb-1c553cc39a91" /></td>
 </tr>
 </table>
-
 ## ✨ Core Features
 
 | Feature | Description |
