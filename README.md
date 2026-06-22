@@ -35,7 +35,7 @@ The platform:
  
 **The Pulse of the World — live trending dashboard**
 <img width="1900" height="847" alt="Screenshot 2026-06-23 002247" src="https://github.com/user-attachments/assets/4a5a0067-da49-46c6-9ef6-7ca7e92d3511" />
-<img width="1897" height="987" alt="Screenshot 2026-06-23 001938" src="https://github.com/user-attachments/assets/f4007dae-60e7-4a70-b5bd-1fe53e8694ea" />
+<img width="1896" height="946" alt="Screenshot 2026-06-23 002307" src="https://github.com/user-attachments/assets/45ec2af3-0fc8-40e5-a62a-7bb55c3e5bbe" />
  
 <table>
 <tr>
