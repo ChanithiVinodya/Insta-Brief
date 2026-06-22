@@ -31,8 +31,19 @@ The platform:
 > Built as a portfolio-grade engineering project demonstrating real-world system design, AI integration, and full-stack development across two languages and three infrastructure layers.
 
 ---
-## 📸 **Screenshots**
-
+## 📸 Screenshots
+<table>
+<tr>
+<td><img src="<img width="1900" height="983" alt="Screenshot 2026-06-23 003903" src="https://github.com/user-attachments/assets/4728a5ae-bfef-46de-93bb-99da34ade1f0" />
+" width="400"/></td>
+<td><img src="<img width="1897" height="987" alt="Screenshot 2026-06-23 001938" src="https://github.com/user-attachments/assets/a54d0f67-80d0-493c-b548-4d37159f6e12" />
+" width="400"/></td>
+</tr>
+<tr>
+<td align="center"><sub>Personalized feed</sub></td>
+<td align="center"><sub>Article view with AI summary</sub></td>
+</tr>
+</table>
 
 ## ✨ Core Features
 
